@@ -1,0 +1,74 @@
+- name: disable nodejs
+  ansible.builtin.command: dnf module disable nodejs -y
+
+- name: enabled nodejs:20
+  ansible.builtin.command: dnf module enable nodejs:20 -y
+
+- name: Install nodejs
+  ansible.builtin.dnf:
+    name: nodejs
+    state: installed
+
+- name: add user expense
+  ansible.builtin.user:
+    name: expense
+    state: present
+
+- name: create /app directory
+  ansible.builtin.file:
+    path: /app
+    state: directory
+
+- name: download backend code
+  ansible.builtin.get_url:
+    url: https://expense-builds.s3.us-east-1.amazonaws.com/expense-backend-v2.zip
+    dest: /tmp/backend.zip
+
+# we can also use this instead of get_url module ansible.builtin.command: curl -o /tmp/backend.zip https://expense-builds.s3.us-east-1.amazonaws.com/expense-backend-v2.zip
+
+- name: unzip backend code
+  ansible.builtin.unarchive:
+    src: /tmp/backend.zip
+    dest: /app
+    remote_src: yes
+
+- name: install npm dependencies
+  ansible.builtin.command: npm install
+  args:
+    chdir: /app
+
+- name: create backend.service
+  ansible.builtin.copy:
+    src: /home/ec2-user/ansible-project/backend.service
+    dest: /etc/systemd/system/backend.service
+
+- name: install mysql
+  ansible.builtin.dnf:
+    name: mysql
+    state: latest
+
+- name: install python mysql dependencies
+  ansible.builtin.pip:
+    name:
+    - PyMySQL
+    - cryptography
+    executable: pip3.9
+
+- name: load mysql data
+  community.mysql.mysql_db:
+    login_user: root
+    login_password: "{{mysql_root_password}}"
+    login_host: "{{login_host}}"
+    target: /app/schema/backend.sql
+    state: import
+    name: all
+
+- name: reload daemon
+  ansible.builtin.systemd_service: 
+    daemon_reload: true
+
+- name: start and enable backend service
+  ansible.builtin.service:
+    name: backend
+    state: started
+    enabled: true
