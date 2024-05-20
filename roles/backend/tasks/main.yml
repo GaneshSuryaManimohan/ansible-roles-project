@@ -1,13 +1,16 @@
 - name: disable nodejs
   ansible.builtin.command: dnf module disable nodejs -y
-
+  
 - name: enabled nodejs:20
   ansible.builtin.command: dnf module enable nodejs:20 -y
 
-- name: Install nodejs
+- name: Install Mysql & NodeJs
   ansible.builtin.dnf:
-    name: nodejs
-    state: installed
+    name: "{{ item }}"
+    state: latest
+  loop:
+  - mysql
+  - nodejs
 
 - name: add user expense
   ansible.builtin.user:
@@ -38,14 +41,9 @@
     chdir: /app
 
 - name: create backend.service
-  ansible.builtin.copy:
-    src: /home/ec2-user/ansible-project/backend.service
+  ansible.builtin.template:
+    src: backend.service.j2
     dest: /etc/systemd/system/backend.service
-
-- name: install mysql
-  ansible.builtin.dnf:
-    name: mysql
-    state: latest
 
 - name: install python mysql dependencies
   ansible.builtin.pip:
@@ -56,7 +54,7 @@
 
 - name: load mysql data
   community.mysql.mysql_db:
-    login_user: root
+    login_user: "{{login_user}}"
     login_password: "{{mysql_root_password}}"
     login_host: "{{login_host}}"
     target: /app/schema/backend.sql
