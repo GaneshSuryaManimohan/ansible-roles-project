@@ -36,12 +36,16 @@
 #     remote_src: yes
 
 - name: run app pre-req
+  tags:
+  - deployment
   ansible.builtin.import_role:
     name: common
     tasks_from: pre-req
 
 
 - name: install npm dependencies
+  tags:
+  - deployment
   ansible.builtin.command: npm install
   args:
     chdir: /app
@@ -50,6 +54,8 @@
   ansible.builtin.template:
     src: backend.service.j2
     dest: /etc/systemd/system/backend.service
+  notify:
+  - reload daemon
 
 - name: install python mysql dependencies
   ansible.builtin.pip:
@@ -67,12 +73,10 @@
     state: import
     name: all
 
-- name: reload daemon
-  ansible.builtin.systemd_service: 
-    daemon_reload: true
-
-- name: start and enable backend service
+- name: restart and enable backend service
+  tags:
+  - deployment
   ansible.builtin.service:
     name: backend
-    state: started
+    state: restarted
     enabled: true
