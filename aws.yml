@@ -15,8 +15,7 @@
         image_id: ami-090252cbe067a9e58
         tags:
           Name: "{{item}}"
-      loop:
-      - "{{instances}}"
+      loop: "{{instances}}"
       register: ec2_info
 
     - name: print output
@@ -24,7 +23,7 @@
         msg: "Output: {{ec2_info}}"
 
     - name: create r53 records
-      amazon.aws.route53:
+      community.aws.route53:
         state: present
         zone: "{{zone}}"
         record: "{{item}}.{{zone}}"
