@@ -33,4 +33,4 @@
         overwrite: true
         ttl: 10
       loop:
-      - "{{results.instances}}"
+      - "{{ec2_info.results.instances}}"
