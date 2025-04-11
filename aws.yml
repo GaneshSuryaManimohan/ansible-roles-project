@@ -1,7 +1,7 @@
 - name: Create EC2 Instances and R53 using Ansible Playbook
   hosts: localhost
   vars:
-    zone: surya-devops.online
+    zone: surya-devops.site
     instances:
     - db
     - backend
